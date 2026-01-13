@@ -1,0 +1,53 @@
+name: Dev CI/CD - Hamdard Hospital
+
+on:
+  push:
+    branches: [dev]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Build & push backend
+        run: |
+          docker build -t $REGISTRY/$IMAGE_NAME-backend:dev ./backend
+          docker push $REGISTRY/$IMAGE_NAME-backend:dev
+
+      - name: Build & push frontend
+        run: |
+          docker build -t $REGISTRY/$IMAGE_NAME-frontend:dev ./frontend
+          docker push $REGISTRY/$IMAGE_NAME-frontend:dev
+
+  deploy-dev:
+    name: Deploy to DEV Server
+    runs-on: self-hosted
+    needs: build-test
+
+    steps:
+      - name: Login to GHCR
+        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Pull latest images
+        run: |
+          docker pull ghcr.io/${{ github.repository }}-backend:dev
+          docker pull ghcr.io/${{ github.repository }}-frontend:dev
+
+      - name: Restart services
+        run: |
+          docker compose down
+          docker compose up -d
