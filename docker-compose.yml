@@ -1,25 +1,20 @@
 services:
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/faeizhamdard22/hamdard-hospital-backend:dev
     container_name: hamdard-backend
     ports:
       - "5000:5000"
     env_file:
-      - ./backend/.env.dev   # env مخصوص dev سرور
+      - ./.env.dev
     restart: unless-stopped
-    
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: ghcr.io/faeizhamdard22/hamdard-hospital-frontend:dev
     container_name: hamdard-frontend
     ports:
       - "5173:5173"
     env_file:
       - ./frontend/.env.dev
-    restart: unless-stopped
     depends_on:
       - backend
+    restart: unless-stopped
